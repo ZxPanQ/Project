@@ -1,20 +1,19 @@
 <?php
-// Handle Add Category
-if (isset($_POST['add_category'])) {
+$user_role = isset($_SESSION['role']) ? $_SESSION['role'] : 'staff';
+
+if (isset($_POST['add_category']) && $user_role === 'admin') {
     $cat = mysqli_real_escape_string($conn, $_POST['category_name']);
     mysqli_query($conn, "INSERT INTO category (category_name) VALUES ('$cat')");
 }
 
-// Handle Add Product
-if (isset($_POST['add_product'])) {
+if (isset($_POST['add_product']) && $user_role === 'admin') {
     $name = mysqli_real_escape_string($conn, $_POST['product_name']);
     $cat_id = (int)$_POST['category_id'];
     $price = (float)$_POST['unit_price'];
     mysqli_query($conn, "INSERT INTO product (category_id, product_name, unit_price) VALUES ('$cat_id', '$name', '$price')");
 }
 
-// Handle Edit Product
-if (isset($_POST['update_product'])) {
+if (isset($_POST['update_product']) && $user_role === 'admin') {
     $product_id = (int)$_POST['product_id'];
     $name = mysqli_real_escape_string($conn, $_POST['product_name']);
     $cat_id = (int)$_POST['category_id'];
@@ -23,8 +22,7 @@ if (isset($_POST['update_product'])) {
     mysqli_query($conn, "UPDATE product SET product_name = '$name', category_id = '$cat_id', unit_price = '$price' WHERE product_id = '$product_id'");
 }
 
-// Handle Delete Product
-if (isset($_POST['delete_product'])) {
+if (isset($_POST['delete_product']) && $user_role === 'admin') {
     $delete_id = (int)$_POST['product_id'];
     mysqli_query($conn, "DELETE FROM product WHERE product_id = '$delete_id'");
 }
@@ -36,7 +34,6 @@ if (isset($_POST['delete_product'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Products & Categories</title>
     <style>
-        /* Modal Popup Styles */
         .modal {
             display: none; 
             position: fixed; 
@@ -64,6 +61,7 @@ if (isset($_POST['delete_product'])) {
     </style>
 </head>
 <body>
+    <?php if ($user_role === 'admin'): ?>
     <div class="content-box">
         <h3>Add New Category</h3>
         <form method="POST" style="display:flex; gap:10px; margin-top:10px;">
@@ -89,6 +87,7 @@ if (isset($_POST['delete_product'])) {
             <button type="submit" name="add_product" class="btn">Save Product</button>
         </form>
     </div>
+    <?php endif; ?>
 
     <div class="content-box">
         <h3>Product List</h3>
@@ -99,12 +98,13 @@ if (isset($_POST['delete_product'])) {
                     <th>Product</th>
                     <th>Category</th>
                     <th>Price</th>
-                    <th>Action</th>
+                    <?php if ($user_role === 'admin'): ?>
+                        <th>Action</th>
+                    <?php endif; ?>
                 </tr>
             </thead>
             <tbody>
                 <?php
-                // Changed ORDER BY from p.product_id DESC to p.product_id ASC
                 $prods = mysqli_query($conn, "SELECT p.*, c.category_name FROM product p JOIN category c ON p.category_id = c.category_id ORDER BY p.product_id ASC");
                 while ($row = mysqli_fetch_assoc($prods)) {
                     $prod_name = htmlspecialchars($row['product_name'], ENT_QUOTES);
@@ -112,8 +112,10 @@ if (isset($_POST['delete_product'])) {
                             <td>{$row['product_id']}</td>
                             <td>{$prod_name}</td>
                             <td>{$row['category_name']}</td>
-                            <td>Rs. " . number_format($row['unit_price'], 2) . "</td>
-                            <td style='display:flex; gap:5px;'>
+                            <td>Rs. " . number_format($row['unit_price'], 2) . "</td>";
+                    
+                    if ($user_role === 'admin') {
+                        echo "<td style='display:flex; gap:5px;'>
                                 <button type='button' class='btn' style='background-color:#3498db; color:white; border:none; padding:5px 10px; cursor:pointer;' 
                                     onclick='openEditModal({$row['product_id']}, \"{$prod_name}\", {$row['category_id']}, {$row['unit_price']})'>
                                     Edit
@@ -122,15 +124,17 @@ if (isset($_POST['delete_product'])) {
                                     <input type='hidden' name='product_id' value='{$row['product_id']}'>
                                     <button type='submit' name='delete_product' class='btn' style='background-color:#e74c3c; color:white; border:none; padding:5px 10px; cursor:pointer;'>Delete</button>
                                 </form>
-                            </td>
-                          </tr>";
+                            </td>";
+                    }
+
+                    echo "</tr>";
                 }
                 ?>
             </tbody>
         </table>
     </div>
 
-    <!-- Edit Product Modal -->
+    <?php if ($user_role === 'admin'): ?>
     <div id="editModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeEditModal()">&times;</span>
@@ -188,5 +192,6 @@ if (isset($_POST['delete_product'])) {
             }
         }
     </script>
+    <?php endif; ?>
 </body>
 </html>

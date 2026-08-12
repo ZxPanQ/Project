@@ -2,19 +2,22 @@
 session_start();
 require_once 'db_connect.php';
 $message = '';
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $username = mysqli_real_escape_string($conn, $_POST['username']);
+    $email = mysqli_real_escape_string($conn, $_POST['email']);
     $password = $_POST['password'];
-    $sql = "SELECT * FROM user WHERE username = '$username'";
+
+    $sql = "SELECT * FROM user WHERE email = '$email'";
     $result = mysqli_query($conn, $sql);
+
     if (mysqli_num_rows($result) == 1) {
         $user = mysqli_fetch_assoc($result);
         
-        // Verify hashed password
         if (password_verify($password, $user['password'])) {
-            $_SESSION['user_id'] = $user['user_id'];
-            $_SESSION['username'] = $user['username'];
+            $_SESSION['user_id']   = $user['user_id'];
+            $_SESSION['email']     = $user['email'];
             $_SESSION['full_name'] = $user['full_name'];
+            $_SESSION['role']      = $user['role'];
             
             header("Location: dashboard.php");
             exit();
@@ -22,7 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             $message = "Invalid password.";
         }
     } else {
-        $message = "Username not found.";
+        $message = "Email address not found.";
     }
 }
 ?>
@@ -32,9 +35,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta charset="UTF-8">
     <title>Login - Shop System</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .back-home {
+            display: inline-block;
+            margin-bottom: 15px;
+            color: #666;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        .back-home:hover {
+            color: #2ecc71;
+        }
+    </style>
 </head>
 <body>
     <div class="auth-card">
+        <a href="landing.php" class="back-home">&larr; Back to Home</a>
         <h2>Account Login</h2>
         <?php if (isset($_GET['signup']) && $_GET['signup'] == 'success'): ?>
             <div class="alert" style="background-color: #d4edda; color: #155724;">Account created! You can now log in.</div>
@@ -44,8 +61,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <?php endif; ?>
         <form method="POST" action="login.php">
             <div class="form-group">
-                <label>Username</label>
-                <input type="text" name="username" required>
+                <label>Email Address</label>
+                <input type="email" name="email" required>
             </div>
             <div class="form-group">
                 <label>Password</label>
